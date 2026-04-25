@@ -2,25 +2,6 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const admin = require("firebase-admin");
-
-
-
-let serviceAccount;
-
-try {
-  serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-  });
-
-  console.log("Firebase Admin Initialized");
-
-} catch (error) {
-  console.error("Firebase Init Error:", error.message);
-}
-
-
 const cron = require('node-cron');
 const twilio = require('twilio');
 const Razorpay = require('razorpay');
@@ -30,8 +11,24 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Initialize Firebase Admin
+// Initialize Firebase Admin (Only ONE initialization)
+try {
+  let serviceAccount;
+  if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+  } else if (process.env.FIREBASE_SERVICE_ACCOUNT_PATH) {
+    serviceAccount = require(process.env.FIREBASE_SERVICE_ACCOUNT_PATH);
+  }
 
+  if (serviceAccount && !admin.apps.length) {
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount)
+    });
+    console.log("Firebase Admin Initialized");
+  }
+} catch (error) {
+  console.error("Firebase Init Error:", error.message);
+}
 
 const db = admin.firestore ? admin.firestore() : null;
 
@@ -73,6 +70,11 @@ const getDaysDifference = (date1, date2) => {
   const diffTime = Math.abs(date2 - date1);
   return Math.floor(diffTime / (1000 * 60 * 60 * 24));
 };
+
+// Debug route
+app.get('/test', (req, res) => {
+  res.send("Server working");
+});
 
 // POST /api/signup
 app.post('/api/signup', async (req, res) => {
@@ -123,34 +125,28 @@ app.post('/api/payments/mark-paid', async (req, res) => {
 });
 
 // POST /api/payments/create-order (Razorpay)
-app.get('/test', (req, res) => {
-  res.send("Server is updated");
-});
 app.post('/api/payments/create-order', async (req, res) => {
   try {
-    const { amount, currency = "INR" } = req.body;
-
-    if (!amount) {
-      return res.status(400).json({ error: "Amount is required" });
-    }
+    const { amount, plan, currency = "INR" } = req.body;
 
     if (!razorpayInstance) {
       return res.status(500).json({ error: "Razorpay not configured." });
     }
 
-    console.log("Request body:", req.body);
+    console.log("Create order requested:", req.body);
 
-    // ✅ decide amount securely
-let finalAmount = 999;
+    // Compute finalAmount based on plan, fallback to amount
+    let finalAmount = amount || 999;
 
-if (req.body.plan === "Standard") finalAmount = 1999;
-if (req.body.plan === "Premium") finalAmount = 2999;
+    if (plan === "Basic") finalAmount = 999;
+    if (plan === "Standard") finalAmount = 1999;
+    if (plan === "Premium") finalAmount = 2999;
 
-const options = {
-  amount: finalAmount * 100,
-  currency,
-  receipt: "receipt_" + Math.random().toString(36).substr(2, 9)
-};
+    const options = {
+      amount: finalAmount * 100, // Amount in paisa
+      currency,
+      receipt: "receipt_" + Math.random().toString(36).substr(2, 9)
+    };
 
     const order = await razorpayInstance.orders.create(options);
     res.status(200).json({ success: true, order });
@@ -169,7 +165,6 @@ app.post('/api/payments/verify', async (req, res) => {
       return res.status(500).json({ error: "Database not configured." });
     }
 
-    // Since we might be mocking, we won't strictly enforce signature verification if env keys are missing
     let isSignatureValid = true;
 
     if (process.env.RAZORPAY_KEY_SECRET) {
@@ -248,12 +243,7 @@ cron.schedule('0 0 * * *', async () => {
   }
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log(`Backend server running on port ${PORT}`);
 });
-
-
-
-
-

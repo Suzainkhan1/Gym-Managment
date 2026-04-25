@@ -188,7 +188,7 @@ function signup() {
             };
 
             // Backend sync
-            return fetch('https://gym-managment-qgr5.onrender.com/api/signup', {
+            return fetch('https://gym-management-qgr5.onrender.com/api/signup', {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(userData)
@@ -288,7 +288,7 @@ function signInWithGoogle() {
                             joinDate: new Date().toLocaleDateString()
                         };
 
-                        fetch('https://gym-managment-qgr5.onrender.com/api/signup', {
+                        fetch('https://gym-management-qgr5.onrender.com/api/signup', {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify(userData)
@@ -489,7 +489,7 @@ function markPaid(userId) {
     const btn = event?.target;
     if (btn) btn.disabled = true;
 
-    fetch('https://gym-managment-qgr5.onrender.com/api/payments/mark-paid', {
+    fetch('https://gym-management-qgr5.onrender.com/api/payments/mark-paid', {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: userId })
@@ -527,10 +527,10 @@ function payNow() {
         if (data.plan === "Premium") amount = 2999;
 
         // 1. Create order on backend
-        fetch('https://gym-managment-qgr5.onrender.com', {
+        fetch('https://gym-management-qgr5.onrender.com/api/payments/create-order', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ amount: amount })
+            body: JSON.stringify({ amount: amount, plan: data.plan })
         })
             .then(res => res.json())
             .then(orderData => {
@@ -538,38 +538,38 @@ function payNow() {
 
                 // 2. Open Razorpay Checkout
                 const options = {
-    key: "rzp_test_Sho7771I5NfLQD", // ✅ REAL KEY
-    amount: orderData.order.amount,
-    currency: orderData.order.currency,
-    name: "Max Health Club Gym",
-    description: `${data.plan} Membership`,
-    order_id: orderData.order.id,
+                    key: "rzp_test_Sho7771I5NfLQD", // ✅ REAL KEY
+                    amount: orderData.order.amount,
+                    currency: orderData.order.currency,
+                    name: "Max Health Club Gym",
+                    description: `${data.plan} Membership`,
+                    order_id: orderData.order.id,
 
-    handler: function (response) {
-        console.log("Payment success:", response);
+                    handler: function (response) {
+                        console.log("Payment success:", response);
 
-        fetch('https://gym-managment-qgr5.onrender.com/api/payments/verify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_signature: response.razorpay_signature,
-                userId: user.uid
-            })
-        })
-        .then(res => res.json())
-        .then(verifyData => {
-            if (verifyData.success) {
-                showToast("Payment successful!");
-                loadUserData(user.uid);
-            } else {
-                showToast("Verification failed", "error");
-            }
-        })
-        .catch(() => showToast("Verification error", "error"));
-    }
-};
+                        fetch('https://gym-management-qgr5.onrender.com/api/payments/verify', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_signature: response.razorpay_signature,
+                                userId: user.uid
+                            })
+                        })
+                            .then(res => res.json())
+                            .then(verifyData => {
+                                if (verifyData.success) {
+                                    showToast("Payment successful!");
+                                    loadUserData(user.uid);
+                                } else {
+                                    showToast("Verification failed", "error");
+                                }
+                            })
+                            .catch(() => showToast("Verification error", "error"));
+                    }
+                };
 
                 const rzp = new window.Razorpay(options);
                 rzp.on('payment.failed', function (response) {
