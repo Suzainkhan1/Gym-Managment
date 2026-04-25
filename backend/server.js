@@ -123,6 +123,9 @@ app.post('/api/payments/mark-paid', async (req, res) => {
 });
 
 // POST /api/payments/create-order (Razorpay)
+app.get('/test', (req, res) => {
+  res.send("Server is updated");
+});
 app.post('/api/payments/create-order', async (req, res) => {
   try {
     const { amount, currency = "INR" } = req.body;
