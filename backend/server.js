@@ -5,14 +5,17 @@ const admin = require("firebase-admin");
 
 
 
+let serviceAccount;
+
 try {
-  const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+  serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
   });
 
   console.log("Firebase Admin Initialized");
+
 } catch (error) {
   console.error("Firebase Init Error:", error.message);
 }
@@ -124,15 +127,27 @@ app.post('/api/payments/create-order', async (req, res) => {
   try {
     const { amount, currency = "INR" } = req.body;
 
+    if (!amount) {
+      return res.status(400).json({ error: "Amount is required" });
+    }
+
     if (!razorpayInstance) {
       return res.status(500).json({ error: "Razorpay not configured." });
     }
 
-    const options = {
-      amount: amount * 100, // Amount in paisa
-      currency,
-      receipt: "receipt_" + Math.random().toString(36).substr(2, 9)
-    };
+    console.log("Request body:", req.body);
+
+    // ✅ decide amount securely
+let finalAmount = 999;
+
+if (req.body.plan === "Standard") finalAmount = 1999;
+if (req.body.plan === "Premium") finalAmount = 2999;
+
+const options = {
+  amount: finalAmount * 100,
+  currency,
+  receipt: "receipt_" + Math.random().toString(36).substr(2, 9)
+};
 
     const order = await razorpayInstance.orders.create(options);
     res.status(200).json({ success: true, order });
