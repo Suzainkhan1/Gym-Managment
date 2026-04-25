@@ -188,7 +188,7 @@ function signup() {
             };
 
             // Backend sync
-            return fetch('http://localhost:3000/api/signup', {
+            return fetch('https://gym-managment-qgr5.onrender.com/api/signup', {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(userData)
@@ -288,7 +288,7 @@ function signInWithGoogle() {
                             joinDate: new Date().toLocaleDateString()
                         };
 
-                        fetch('http://localhost:3000/api/signup', {
+                        fetch('https://gym-managment-qgr5.onrender.com/api/signup', {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify(userData)
@@ -489,7 +489,7 @@ function markPaid(userId) {
     const btn = event?.target;
     if (btn) btn.disabled = true;
 
-    fetch('http://localhost:3000/api/payments/mark-paid', {
+    fetch('https://gym-managment-qgr5.onrender.com/api/payments/mark-paid', {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: userId })
@@ -527,7 +527,7 @@ function payNow() {
         if (data.plan === "Premium") amount = 2999;
 
         // 1. Create order on backend
-        fetch('http://localhost:3000/api/payments/create-order', {
+        fetch('https://gym-managment-qgr5.onrender.com', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ amount: amount })
@@ -548,7 +548,7 @@ function payNow() {
     handler: function (response) {
         console.log("Payment success:", response);
 
-        fetch('http://localhost:3000/api/payments/verify', {
+        fetch('https://gym-managment-qgr5.onrender.com/api/payments/verify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
