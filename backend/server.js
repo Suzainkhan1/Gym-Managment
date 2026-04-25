@@ -4,11 +4,20 @@ const cors = require('cors');
 const admin = require("firebase-admin");
 
 
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-});
+try {
+  const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
+
+  console.log("Firebase Admin Initialized");
+} catch (error) {
+  console.error("Firebase Init Error:", error.message);
+}
+
+
 const cron = require('node-cron');
 const twilio = require('twilio');
 const Razorpay = require('razorpay');
@@ -19,15 +28,7 @@ app.use(cors());
 app.use(express.json());
 
 // Initialize Firebase Admin
-try {
-  const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
-  });
-  console.log("Firebase Admin Initialized");
-} catch (error) {
-  console.error("Failed to initialize Firebase Admin. Please check FIREBASE_SERVICE_ACCOUNT_PATH.", error.message);
-}
+
 
 const db = admin.firestore ? admin.firestore() : null;
 
